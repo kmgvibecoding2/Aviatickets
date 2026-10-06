@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Подешевле</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=Roboto+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: одна колонка. Форма поиска, затем календарь цен по дням как главный элемент, затем список предложений. */
+:root{
+  --bg:#eaf0f6;
+  --surface:#ffffff;
+  --ink:#10244a;
+  --muted:#5a6b88;
+  --line:#d3dde9;
+  --bar:#9db6d6;
+  --amber:#f5a623;
+  --amber-ink:#2a1a00;
+  --teal:#0f8f86;
+  --teal-bg:#dff4f1;
+  --danger:#b3261e;
+  --font-display:"Roboto Condensed","PT Sans",Arial,sans-serif;
+  --font-body:"PT Sans",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1627;--surface:#14233b;--ink:#e7eefa;--muted:#9fb0cc;--line:#26395a;
+    --bar:#3d5d8a;--amber:#f7b447;--amber-ink:#2a1a00;--teal:#43d1c5;--teal-bg:#10413f;--danger:#ff8a80;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1627;--surface:#14233b;--ink:#e7eefa;--muted:#9fb0cc;--line:#26395a;
+  --bar:#3d5d8a;--amber:#f7b447;--amber-ink:#2a1a00;--teal:#43d1c5;--teal-bg:#10413f;--danger:#ff8a80;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--font-body);padding-inline:16px;padding-block:0 40px}
+.wrap{max-width:980px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,.logo{font-family:var(--font-display);text-wrap:balance}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:16px}
+.logo{font-size:1.7rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.logo i{width:14px;height:14px;background:var(--amber);border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:block}
+.hright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.demo{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--amber);color:var(--amber-ink);padding:3px 9px;border-radius:99px}
+.lang{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;background:var(--surface)}
+.lang button{border:0;background:none;padding:6px 14px;cursor:pointer;font-weight:700;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+
+.hero h1{font-size:clamp(1.9rem,5vw,3rem);line-height:1.05;margin:0 0 6px;font-weight:700}
+.hero p{margin:0;color:var(--muted);max-width:60ch}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+form.search{display:flex;flex-direction:column;gap:14px}
+.trip{display:flex;gap:6px;flex-wrap:wrap}
+.trip label{cursor:pointer}
+.trip input{position:absolute;opacity:0;pointer-events:none}
+.trip span{display:inline-block;padding:6px 14px;border:1px solid var(--line);border-radius:99px;font-weight:700;color:var(--muted)}
+.trip input:checked+span{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.trip input:focus-visible+span{outline:3px solid var(--amber);outline-offset:2px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.route{grid-column:1/-1;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
+@media (max-width:560px){.route{grid-template-columns:1fr}.swap{justify-self:center}}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.f input,.f select{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+.f input:disabled{opacity:.45}
+.swap{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:1.1rem}
+.f{position:relative}
+.lb{position:absolute;top:100%;left:0;right:0;z-index:20;margin:4px 0 0;padding:4px;list-style:none;max-height:260px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(10,25,60,.18)}
+.lb li{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer}
+.lb li span{color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+.lb li[aria-selected="true"],.lb li:hover{background:var(--bg)}
+.lb .none{color:var(--muted);cursor:default}
+.paxbtn{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;min-height:44px;width:100%;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pop{position:absolute;top:100%;right:0;z-index:20;margin-top:4px;width:min(320px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 14px 12px;box-shadow:0 8px 24px rgba(10,25,60,.18)}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.prow b{display:block}.prow span{font-size:.85rem;color:var(--muted)}
+.step{display:flex;align-items:center;gap:10px}
+.step button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:1.2rem;line-height:1}
+.step button:disabled{opacity:.3;cursor:not-allowed}
+.step output{min-width:1.5ch;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.pnote{margin:8px 0 0;font-size:.8rem;color:var(--muted)}
+.err{color:var(--danger);font-weight:700;min-height:1.3em;margin:0}
+.go{background:var(--amber);color:var(--amber-ink);border:0;border-radius:10px;font-weight:700;font-size:1.05rem;padding:11px 22px;min-height:44px;cursor:pointer}
+.go:hover{filter:brightness(1.06)}
+
+.cal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.cal-head h2{margin:0;font-size:1.5rem}
+.cal-head small{color:var(--muted);display:block;font-size:.9rem}
+.nav{display:flex;align-items:center;gap:6px}
+.nav button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:1.1rem}
+.nav button:disabled{opacity:.35;cursor:not-allowed}
+.nav b{min-width:9.5ch;text-align:center;text-transform:capitalize}
+.picked{font-family:var(--font-display);font-size:1.15rem;font-weight:600;margin-bottom:8px;min-height:1.6em}
+.picked em{font-style:normal;color:var(--teal)}
+.chart{overflow-x:auto;padding-bottom:4px}
+.bars{display:flex;gap:3px;align-items:flex-end;min-width:calc(var(--n)*24px);height:190px}
+.bar{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;border:0;background:none;padding:0;cursor:pointer}
+.bar .col{width:100%;background:var(--bar);border-radius:5px 5px 0 0;transition:filter .15s}
+.bar:hover .col{filter:brightness(1.12)}
+.bar.cheap .col{background:var(--amber)}
+.bar.sel{outline:2px solid var(--ink);outline-offset:1px;border-radius:5px}
+.bar:disabled{cursor:not-allowed;opacity:.3}
+.bar .d{font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1}
+.bar .w{font-size:.62rem;color:var(--muted);line-height:1;text-transform:uppercase}
+.bar.we .d,.bar.we .w{color:var(--danger)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+
+.tools{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.tools .grp{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.tools label{display:flex;gap:8px;align-items:center}
+.tools input[type=range]{accent-color:var(--amber);width:160px}
+.tools select{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px}
+.notice{background:var(--teal-bg);border-radius:10px;padding:10px 14px;font-size:.92rem}
+.notice.warn{background:color-mix(in srgb,var(--amber) 22%,var(--surface))}
+
+.list{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.offer{display:grid;grid-template-columns:1fr auto;gap:14px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.offer.best{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+@media (max-width:600px){.offer{grid-template-columns:1fr}}
+.legs{display:flex;flex-direction:column;gap:12px;min-width:0}
+.leg{display:grid;grid-template-columns:minmax(0,9.5rem) 1fr;gap:12px;align-items:center}
+@media (max-width:480px){.leg{grid-template-columns:1fr}}
+.al b{display:block}
+.al span{font-size:.85rem;color:var(--muted)}
+.tl{display:flex;align-items:center;gap:10px;min-width:0}
+.tl .t{font-family:var(--font-display);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.tl .t small{font-size:.7rem;color:var(--muted);font-family:var(--font-body)}
+.tl .t em{display:block;font-family:var(--font-body);font-style:normal;font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.line{flex:1;min-width:48px;text-align:center;font-size:.78rem;color:var(--muted)}
+.line::after{content:"";display:block;height:2px;background:var(--line);margin-top:3px;position:relative}
+.stops{color:var(--teal);font-weight:700}
+.stops.n{color:var(--muted)}
+.buy{display:flex;flex-direction:column;align-items:flex-end;gap:6px;justify-content:center;border-left:1px dashed var(--line);padding-left:14px}
+@media (max-width:600px){.buy{border-left:0;border-top:1px dashed var(--line);padding:12px 0 0;align-items:stretch}}
+.price{font-family:var(--font-display);font-size:1.8rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.badge{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--amber);color:var(--amber-ink);padding:2px 8px;border-radius:99px;align-self:flex-start}
+.prov{font-size:.85rem;color:var(--teal);font-weight:700}
+.also{font-size:.8rem;color:var(--muted);text-align:right}
+@media (max-width:600px){.also{text-align:left}}
+.buy button{background:var(--ink);color:var(--surface);border:0;border-radius:10px;padding:10px 20px;font-weight:700;cursor:pointer;min-height:44px}
+.empty{text-align:center;color:var(--muted);padding:30px 16px}
+
+footer{color:var(--muted);font-size:.88rem;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:16px}
+footer p{margin:0;max-width:75ch}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 18px;border-radius:10px;max-width:calc(100% - 32px);z-index:5}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><i></i><span>Подешевле</span></div>
+    <div class="hright">
+      <span class="demo" id="demoBadge"></span>
+      <div class="lang" role="group" aria-label="Тіл / Язык">
+        <button type="button" data-lang="kk" aria-pressed="false">Қазақша</button>
+        <button type="button" data-lang="ru" aria-pressed="true">Русский</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 id="h1"></h1>
+    <p id="lead"></p>
+  </section>
+
+  <form class="card search" id="form" novalidate>
+    <div class="trip" role="radiogroup" id="trip">
+      <label><input type="radio" name="trip" value="rt" checked><span id="tRt"></span></label>
+      <label><input type="radio" name="trip" value="ow"><span id="tOw"></span></label>
+    </div>
+    <div class="fields">
+      <div class="route">
+        <div class="f"><label for="from" id="lFrom"></label><input id="from" role="combobox" aria-expanded="false" aria-controls="lb-from" autocomplete="off"><ul class="lb" id="lb-from" role="listbox" hidden></ul></div>
+        <button type="button" class="swap" id="swap">⇄</button>
+        <div class="f"><label for="to" id="lTo"></label><input id="to" role="combobox" aria-expanded="false" aria-controls="lb-to" autocomplete="off"><ul class="lb" id="lb-to" role="listbox" hidden></ul></div>
+      </div>
+      <div class="f"><label for="dep" id="lDep"></label><input id="dep" type="date"></div>
+      <div class="f"><label for="ret" id="lRet"></label><input id="ret" type="date"></div>
+      <div class="f paxf"><label for="paxBtn" id="lPax"></label><button type="button" id="paxBtn" class="paxbtn" aria-expanded="false" aria-controls="paxPop"></button><div class="pop" id="paxPop" hidden></div></div>
+      <button class="go" id="go" type="submit"></button>
+    </div>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+
+  <section class="card" aria-labelledby="calT">
+    <div class="cal-head">
+      <div><h2 id="calT"></h2><small id="calS"></small></div>
+      <div class="nav">
+        <button type="button" id="prev" aria-label="←">‹</button>
+        <b id="mon"></b>
+        <button type="button" id="next" aria-label="→">›</button>
+      </div>
+    </div>
+    <div class="picked" id="picked" aria-live="polite"></div>
+    <div class="chart"><div class="bars" id="bars"></div></div>
+    <div class="legend"><span><i style="background:var(--amber)"></i><span id="lgCheap"></span></span><span><i style="background:var(--bar)"></i><span id="lgOther"></span></span><span id="lgNote"></span></div>
+  </section>
+
+  <section aria-labelledby="resT" style="display:flex;flex-direction:column;gap:14px">
+    <div class="tools card" style="padding:12px 16px">
+      <h2 id="resT" style="margin:0;font-size:1.3rem"></h2>
+      <div class="grp">
+        <label><input type="checkbox" id="direct"><span id="lDirect"></span></label>
+        <label><span id="lMax"></span><input type="range" id="max"><b id="maxV"></b></label>
+        <select id="sort" aria-label="sort"></select>
+      </div>
+    </div>
+    <div class="notice warn" id="partial" hidden></div>
+    <ul class="list" id="list"></ul>
+  </section>
+
+  <footer>
+    <p id="disc"></p>
+    <p id="rate"></p>
+  </footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const T={
+ru:{
+ demo:'Демо-версия',h1:'Найдите самый дешёвый день вылета',
+ lead:'Цены на каждый день месяца и лучшие билеты на выбранную дату. Все поставщики в одном месте, цены в тенге.',
+ rt:'Туда и обратно',ow:'В одну сторону',from:'Откуда',to:'Куда',dep:'Вылет',ret:'Возвращение',pax:'Пассажиры',
+ adt:'Взрослый',adtS:'от 12 лет',chd:'Ребёнок',chdS:'2–11,99 лет',inf:'Ребёнок',infS:'0–1,99 лет (без места)',pnote:'Максимум 6 пассажиров. Младенцев не больше, чем взрослых. Цена ребёнка 75%, младенца 10% от взрослой.',none:'Город не найден',
+ paxN:(a,c,i)=>[a+' взр.',c?c+' дет.':'',i?i+' мл.':''].filter(Boolean).join(', '),go:'Найти билеты',
+ e_from:'Город вылета не найден. Выберите вариант из списка.',e_to:'Город прилёта не найден. Выберите вариант из списка.',
+ e_same:'Города совпадают. Выберите разные города.',e_past:'Дата вылета в прошлом. Выберите сегодняшний или будущий день.',
+ e_ret:'Возвращение раньше вылета. Выберите дату позже.',e_ret0:'Укажите дату возвращения или выберите «В одну сторону».',
+ calT:'Цены по дням',calS:(a,b,rt)=>a+' → '+b+(rt?' · туда и обратно':' · в одну сторону'),
+ lgCheap:'Самый дешёвый день',lgOther:'Другие дни',lgNote:'Минимальная цена среди всех поставщиков',
+ picked:(d,p)=>d+' — от ',pickedNone:'Выберите день в календаре',
+ prevM:'Предыдущий месяц',nextM:'Следующий месяц',
+ resT:'Билеты на выбранную дату',direct:'Только прямые',max:'Цена до',
+ s_cheap:'Сначала дешёвые',s_fast:'Сначала быстрые',
+ direct0:'Прямой',stops:(n,c)=>n+' пересадка · '+c,cheapest:'Самый дешёвый',best:'Выгоднее всего:',also:'Также:',
+ choose:'Выбрать',total:(n)=>'за '+n+' '+(n===1?'пассажира':'пассажиров'),
+ back:'Обратно',there:'Туда',
+ empty:'Ничего не найдено. Уберите фильтр «Только прямые» или увеличьте максимальную цену.',
+ partial:'Один из поставщиков не ответил. Список может быть неполным.',
+ toast:'Демо: в рабочей версии здесь откроется страница поставщика.',
+ disc:'Сайт получает комиссию от партнёров, когда вы покупаете билет по нашей ссылке. Комиссия не влияет на порядок «Сначала дешёвые». Покупка оформляется на сайте поставщика, платежи и данные карт здесь не обрабатываются.',
+ rate:'Демо-версия: цены и авиакомпании условные. Цены поставщиков в других валютах пересчитываются в тенге по курсу на день поиска.',
+ foundN:n=>n+' вариантов',tz:' +1 день'
+},
+kk:{
+ demo:'Демо-нұсқа',h1:'Ұшудың ең арзан күнін табыңыз',
+ lead:'Айдың әр күніне арналған бағалар және таңдалған күнге ең жақсы билеттер. Барлық жеткізушілер бір жерде, бағасы теңгемен.',
+ rt:'Барып-қайту',ow:'Бір бағытқа',from:'Қайдан',to:'Қайда',dep:'Ұшу күні',ret:'Қайту күні',pax:'Жолаушылар',
+ adt:'Ересек',adtS:'12 жастан',chd:'Бала',chdS:'2–11,99 жас',inf:'Бала',infS:'0–1,99 жас (орынсыз)',pnote:'Ең көбі 6 жолаушы. Сәбилер саны ересектерден аспауы керек. Баланың бағасы 75%, сәбидікі 10%.',none:'Қала табылмады',
+ paxN:(a,c,i)=>[a+' ересек',c?c+' бала':'',i?i+' сәби':''].filter(Boolean).join(', '),go:'Билет табу',
+ e_from:'Аттану қаласы табылмады. Тізімнен таңдаңыз.',e_to:'Жету қаласы табылмады. Тізімнен таңдаңыз.',
+ e_same:'Қалалар бірдей. Әртүрлі қалалар таңдаңыз.',e_past:'Ұшу күні өтіп кеткен. Бүгінгі немесе келесі күнді таңдаңыз.',
+ e_ret:'Қайту күні ұшу күнінен ерте. Кейінгі күнді таңдаңыз.',e_ret0:'Қайту күнін көрсетіңіз немесе «Бір бағытқа» таңдаңыз.',
+ calT:'Күн сайынғы бағалар',calS:(a,b,rt)=>a+' → '+b+(rt?' · барып-қайту':' · бір бағытқа'),
+ lgCheap:'Ең арзан күн',lgOther:'Басқа күндер',lgNote:'Барлық жеткізушілер арасындағы ең төмен баға',
+ picked:(d,p)=>d+' — бастап ',pickedNone:'Күнтізбеден күнді таңдаңыз',
+ prevM:'Алдыңғы ай',nextM:'Келесі ай',
+ resT:'Таңдалған күнге билеттер',direct:'Тек тікелей',max:'Баға дейін',
+ s_cheap:'Алдымен арзандары',s_fast:'Алдымен жылдамдары',
+ direct0:'Тікелей',stops:(n,c)=>n+' ауысу · '+c,cheapest:'Ең арзан',best:'Ең тиімдісі:',also:'Сондай-ақ:',
+ choose:'Таңдау',total:(n)=>n+' жолаушыға',
+ back:'Кері',there:'Барар жол',
+ empty:'Ештеңе табылмады. «Тек тікелей» сүзгісін алып тастаңыз немесе ең жоғары бағаны арттырыңыз.',
+ partial:'Жеткізушілердің бірі жауап бермеді. Тізім толық болмауы мүмкін.',
+ toast:'Демо: жұмыс нұсқасында осы жерде жеткізушінің беті ашылады.',
+ disc:'Біздің сілтеме арқылы билет сатып алсаңыз, сайт серіктестерден комиссия алады. Комиссия «Алдымен арзандары» тәртібіне әсер етпейді. Сатып алу жеткізушінің сайтында жүзеге асады, мұнда төлемдер мен карта деректері өңделмейді.',
+ rate:'Демо-нұсқа: бағалар мен авиакомпаниялар шартты. Басқа валютадағы жеткізуші бағалары іздеу күнгі бағам бойынша теңгеге айналдырылады.',
+ foundN:n=>n+' нұсқа',tz:' +1 күн'
+}};
+// ru, kk, lat, lon
+const C={
+ALA:['Алматы','Алматы',43.35,77.04],NQZ:['Астана','Астана',51.02,71.47],CIT:['Шымкент','Шымкент',42.36,69.48],
+AKX:['Актобе','Ақтөбе',50.25,57.2],GUW:['Атырау','Атырау',47.12,51.82],SCO:['Актау','Ақтау',43.86,51.09],
+MOW:['Москва','Мәскеу',55.97,37.41],LED:['Санкт-Петербург','Санкт-Петербург',59.8,30.26],IST:['Стамбул','Стамбул',41.26,28.74],
+AYT:['Анталья','Анталья',36.9,30.8],DXB:['Дубай','Дубай',25.25,55.36],TAS:['Ташкент','Ташкент',41.26,69.28],
+FRU:['Бишкек','Бішкек',43.06,74.48],TBS:['Тбилиси','Тбилиси',41.67,44.95],EVN:['Ереван','Ереван',40.15,44.4],
+GYD:['Баку','Баку',40.47,50.05],DEL:['Дели','Дели',28.56,77.1],BKK:['Бангкок','Бангкок',13.69,100.75],
+SIN:['Сингапур','Сингапур',1.36,103.99],ICN:['Сеул','Сеул',37.46,126.44],TYO:['Токио','Токио',35.55,139.78],
+PEK:['Пекин','Бейжің',40.08,116.58],URC:['Урумчи','Үрімжі',43.9,87.47],CAI:['Каир','Қаһира',30.12,31.4],
+FRA:['Франкфурт','Франкфурт',50.03,8.57],LON:['Лондон','Лондон',51.47,-0.45],PAR:['Париж','Париж',49.0,2.55],
+JFK:['Нью-Йорк','Нью-Йорк',40.64,-73.78],
+KGF:['Караганда','Қарағанды',49.67,73.33],KSN:['Костанай','Қостанай',53.21,63.55],PWQ:['Павлодар','Павлодар',52.19,77.07],
+PLX:['Семей','Семей',50.35,80.23],UKK:['Усть-Каменогорск','Өскемен',50.03,82.49],URA:['Уральск','Орал',51.15,51.54],
+KZO:['Кызылорда','Қызылорда',44.71,65.59],DMB:['Тараз','Тараз',42.85,71.3],HSA:['Туркестан','Түркістан',43.31,68.55],
+KOV:['Кокшетау','Көкшетау',53.33,69.59],PPK:['Петропавловск','Петропавл',54.77,69.18],
+OVB:['Новосибирск','Новосібір',55.01,82.65],SVX:['Екатеринбург','Екатеринбург',56.74,60.8],MSQ:['Минск','Минск',53.88,28.03],
+OSS:['Ош','Ош',40.61,72.79],DYU:['Душанбе','Душанбе',38.54,68.82],SKD:['Самарканд','Самарқанд',39.7,66.98],BUS:['Батуми','Батуми',41.61,41.6],
+DOH:['Доха','Доха',25.27,51.61],TLV:['Тель-Авив','Тель-Авив',32.0,34.89],SSH:['Шарм-эш-Шейх','Шарм-эш-Шейх',27.98,34.39],HRG:['Хургада','Хургада',27.18,33.8],
+HKG:['Гонконг','Гонконг',22.31,113.91],SHA:['Шанхай','Шанхай',31.14,121.81],HAN:['Ханой','Ханой',21.22,105.81],DPS:['Бали','Бали',-8.75,115.17],
+MLE:['Мале','Мале',4.19,73.53],ROM:['Рим','Рим',41.8,12.25],BCN:['Барселона','Барселона',41.3,2.08],PRG:['Прага','Прага',50.1,14.26],
+VIE:['Вена','Вена',48.11,16.57],WAW:['Варшава','Варшава',52.17,20.97],MAD:['Мадрид','Мадрид',40.47,-3.56],LAX:['Лос-Анджелес','Лос-Анджелес',33.94,-118.41]};
+const HUBS=['IST','DXB','NQZ','TAS','MOW','FRA'];
+const AIR=[['Алтын Эйр','AL'],['Сарыарқа Авиа','SA'],['Тянь-Шань Джет','TJ'],['Каспий Лайнс','KL'],['Степь Эйр','SE'],['Жібек Вингс','ZW']];
+const PROV=['СкайПартнёр','БилетОн','АэроМаркет','Көкше Тревел','FlyDeal'];
+const SEASON=[.9,.9,.95,1,1,1.1,1.2,1.2,1.05,.95,.95,1.15];
+const DOW=[1.12,1,.9,.9,1,1.12,1.04];
+const $=id=>document.getElementById(id);
+let lang='ru';
+try{const s=localStorage.getItem('lang');if(s==='kk'||s==='ru')lang=s;else if((navigator.language||'').startsWith('kk'))lang='kk';}catch(e){}
+const L=()=>T[lang];
+const cn=c=>C[c][lang==='kk'?1:0];
+
+// helpers
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let a=hash(seed);return()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const parse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const today=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
+const money=n=>String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' ₸';
+const loc=()=>lang==='kk'?'kk-KZ':'ru-RU';
+function dist(a,b){const R=6371,r=Math.PI/180,[,,la1,lo1]=C[a],[,,la2,lo2]=C[b];
+ const x=Math.sin((la2-la1)*r/2)**2+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin((lo2-lo1)*r/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function dayPrice(a,b,d){
+ const km=dist(a,b),days=Math.round((d-today)/864e5);
+ const ahead=days<7?1.5:days<14?1.25:days<30?1.1:1;
+ const noise=.92+rng(a+b+iso(d))()*.16;
+ return Math.round((9000+km*13)*DOW[d.getDay()]*SEASON[d.getMonth()]*ahead*noise/100)*100;
+}
+
+// state
+const S={a:'ALA',b:'IST',rt:true,dep:addDays(today,14),ret:addDays(today,21),adt:1,chd:0,inf:0,pax:1,cnt:1,month:null,sel:null,sort:'cheap',direct:false,max:0};
+S.month=new Date(S.dep.getFullYear(),S.dep.getMonth(),1);
+let offers=[];
+
+function applyPax(){S.pax=S.adt+.75*S.chd+.1*S.inf;S.cnt=S.adt+S.chd+S.inf}
+function gap(){return S.rt?Math.max(1,Math.round((S.ret-S.dep)/864e5)):0}
+function calPrice(d){const p=dayPrice(S.a,S.b,d);return S.rt?p+dayPrice(S.b,S.a,addDays(d,gap())):p}
+
+function leg(a,b,d,r,k,stops,transfer,al){
+ const km=dist(a,b);
+ const dur=Math.round(km/800*60+40+(stops?90+r()*90:0));
+ const start=Math.round((5+r()*16)*4)*15; // minutes from midnight
+ return{from:a,to:b,start,dur,arr:(start+dur)%1440,plus:Math.floor((start+dur)/1440),stops,transfer,al,no:al[1]+' '+(100+Math.floor(r()*900))};
+}
+function makeOffers(){
+ const key=S.a+S.b+iso(S.dep)+(S.rt?iso(S.ret):'');
+ const r=rng(key),km=dist(S.a,S.b),out=[];
+ const base=calPrice(S.dep),n=7;
+ for(let i=0;i<n;i++){
+  const k=i===0?0:.04+r()*.5;
+  const stops=km<700?0:(r()<.5?0:1);
+  const hubs=HUBS.filter(h=>h!==S.a&&h!==S.b);
+  const tr=hubs[Math.floor(r()*hubs.length)];
+  const al=AIR[Math.floor(r()*AIR.length)];
+  const legs=[leg(S.a,S.b,S.dep,r,k,stops,tr,al)];
+  if(S.rt)legs.push(leg(S.b,S.a,S.ret,r,k,stops,tr,al));
+  const price=Math.round(base*(1+k)/100)*100;
+  const np=2+Math.floor(r()*3),pool=PROV.slice(),prov=[];
+  for(let j=0;j<np;j++)prov.push(pool.splice(Math.floor(r()*pool.length),1)[0]);
+  const ps=prov.map((p,j)=>({p,price:j===0?price:Math.round(price*(1+.01+r()*.08)/100)*100})).sort((x,y)=>x.price-y.price);
+  out.push({legs,price,ps,dur:legs.reduce((s,l)=>s+l.dur,0)});
+ }
+ offers=out;
+ const mx=Math.max(...out.map(o=>o.price*S.pax));
+ const mn=Math.min(...out.map(o=>o.price*S.pax));
+ const m=$('max');m.min=mn;m.max=mx;m.step=100;m.value=mx;S.max=mx;
+ S.partial=hash(key)%4===0;
+}
+
+// i18n render
+function setStatic(){
+ const t=L();document.documentElement.lang=lang;
+ $('demoBadge').textContent=t.demo;$('h1').textContent=t.h1;$('lead').textContent=t.lead;
+ $('tRt').textContent=t.rt;$('tOw').textContent=t.ow;
+ $('lFrom').textContent=t.from;$('lTo').textContent=t.to;$('lDep').textContent=t.dep;$('lRet').textContent=t.ret;$('lPax').textContent=t.pax;
+ $('go').textContent=t.go;$('calT').textContent=t.calT;
+ $('lgCheap').textContent=t.lgCheap;$('lgOther').textContent=t.lgOther;$('lgNote').textContent=t.lgNote;
+ $('prev').setAttribute('aria-label',t.prevM);$('next').setAttribute('aria-label',t.nextM);
+ $('resT').textContent=t.resT;$('lDirect').textContent=t.direct;$('lMax').textContent=t.max+' ';
+ $('disc').textContent=t.disc;$('rate').textContent=t.rate;
+ $('from').value=cn(S.a)+' ('+S.a+')';$('to').value=cn(S.b)+' ('+S.b+')';
+ renderPax();
+ $('sort').innerHTML=`<option value="cheap">${t.s_cheap}</option><option value="fast">${t.s_fast}</option>`;$('sort').value=S.sort;
+ document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));
+}
+
+function renderCal(){
+ const t=L(),y=S.month.getFullYear(),m=S.month.getMonth();
+ const nd=new Date(y,m+1,0).getDate();
+ const days=[];for(let i=1;i<=nd;i++){const d=new Date(y,m,i);days.push({d,p:d<today?null:calPrice(d)})}
+ const ps=days.filter(x=>x.p!=null).map(x=>x.p);
+ const mx=Math.max(...ps,1),mn=Math.min(...ps);
+ const wd=new Intl.DateTimeFormat(loc(),{weekday:'short'}),full=new Intl.DateTimeFormat(loc(),{day:'numeric',month:'long',weekday:'long'});
+ $('bars').style.setProperty('--n',nd);
+ $('bars').innerHTML=days.map(({d,p})=>{
+  const dis=p==null,cls=['bar'];
+  if(!dis&&p===mn)cls.push('cheap');if(S.sel&&iso(d)===iso(S.dep))cls.push('sel');if(d.getDay()===0||d.getDay()===6)cls.push('we');
+  const h=dis?6:Math.max(8,p/mx*150);
+  return `<button type="button" class="${cls.join(' ')}" data-d="${iso(d)}" ${dis?'disabled':''} aria-label="${full.format(d)}${dis?'':', '+money(p)}"><span class="col" style="height:${h}px"></span><span class="d">${d.getDate()}</span><span class="w">${wd.format(d).slice(0,2)}</span></button>`;
+ }).join('');
+ $('mon').textContent=new Intl.DateTimeFormat(loc(),{month:'long',year:'numeric'}).format(S.month);
+ $('prev').disabled=new Date(y,m,1)<=new Date(today.getFullYear(),today.getMonth(),1);
+ $('calS').textContent=t.calS(cn(S.a),cn(S.b),S.rt);
+ const inM=S.dep.getMonth()===m&&S.dep.getFullYear()===y;
+ $('picked').innerHTML=inM?t.picked(full.format(S.dep))+'<em>'+money(calPrice(S.dep)*S.pax)+'</em>':t.pickedNone;
+}
+
+function fmtT(min){return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0')}
+function fmtD(min){const h=Math.floor(min/60),m=min%60;return lang==='kk'?`${h} сағ ${m} мин`:`${h} ч ${m} мин`}
+
+function renderList(){
+ const t=L();
+ const items=offers.filter(o=>o.price*S.pax<=S.max&&(!S.direct||o.legs.every(l=>!l.stops)));
+ items.sort((x,y)=>S.sort==='cheap'?x.price-y.price||x.dur-y.dur:x.dur-y.dur||x.price-y.price);
+ const cheapest=Math.min(...offers.map(o=>o.price));
+ $('maxV').textContent=money(S.max);
+ $('partial').hidden=!S.partial;$('partial').textContent=t.partial;
+ if(!items.length){$('list').innerHTML=`<li class="card empty">${t.empty}</li>`;return}
+ $('list').innerHTML=items.map((o,i)=>{
+  const best=o.price===cheapest;
+  const legs=o.legs.map((l,j)=>`
+   <div class="leg"><div class="al"><b>${l.al[0]}</b><span>${l.no}${S.rt?' · '+(j?t.back:t.there):''}</span></div>
+   <div class="tl"><div class="t">${fmtT(l.start)}<em>${l.from}</em></div>
+   <div class="line">${fmtD(l.dur)}<br><span class="stops ${l.stops?'':'n'}">${l.stops?t.stops(l.stops,cn(l.transfer)):t.direct0}</span></div>
+   <div class="t">${fmtT(l.arr)}${l.plus?`<small>${t.tz}</small>`:''}<em>${l.to}</em></div></div></div>`).join('');
+  const [bp,...rest]=o.ps;
+  return `<li class="offer${best?' best':''}"><div class="legs">${legs}</div>
+   <div class="buy">${best?`<span class="badge">${t.cheapest}</span>`:''}
+   <div class="price">${money(o.price*S.pax)}</div>
+   <div class="also">${t.total(S.cnt)}</div>
+   <div class="prov">${t.best} ${bp.p}</div>
+   ${rest.length?`<div class="also">${t.also} ${rest.map(r=>r.p+' '+money(r.price*S.pax)).join(', ')}</div>`:''}
+   <button type="button" data-buy>${t.choose}</button></div></li>`;
+ }).join('');
+}
+
+function renderAll(){renderCal();renderList()}
+
+function resolve(v){
+ v=v.trim().toLowerCase();if(!v)return null;
+ const m=v.match(/\(([a-z]{3})\)/i);if(m&&C[m[1].toUpperCase()])return m[1].toUpperCase();
+ if(C[v.toUpperCase()])return v.toUpperCase();
+ return Object.keys(C).find(c=>C[c][0].toLowerCase()===v||C[c][1].toLowerCase()===v)||null;
+}
+function search(e){
+ if(e)e.preventDefault();
+ const t=L(),a=resolve($('from').value),b=resolve($('to').value),rt=document.querySelector('[name=trip]:checked').value==='rt';
+ const fail=m=>{$('err').textContent=m;return false};
+ if(!a)return fail(t.e_from);if(!b)return fail(t.e_to);if(a===b)return fail(t.e_same);
+ if(!$('dep').value||parse($('dep').value)<today)return fail(t.e_past);
+ const dep=parse($('dep').value);let ret=S.ret;
+ if(rt){if(!$('ret').value)return fail(t.e_ret0);ret=parse($('ret').value);if(ret<=dep)return fail(t.e_ret)}
+ $('err').textContent='';
+ Object.assign(S,{a,b,rt,dep,ret,sel:true});
+ S.month=new Date(dep.getFullYear(),dep.getMonth(),1);
+ setStatic();syncDates();makeOffers();renderAll();
+}
+function syncDates(){$('dep').value=iso(S.dep);$('dep').min=iso(today);$('ret').value=iso(S.ret);$('ret').min=iso(S.dep);$('ret').disabled=!S.rt;
+ document.querySelector(`[name=trip][value=${S.rt?'rt':'ow'}]`).checked=true}
+
+// events
+$('form').addEventListener('submit',search);
+$('swap').onclick=()=>{const x=$('from').value;$('from').value=$('to').value;$('to').value=x};
+document.querySelectorAll('[name=trip]').forEach(r=>r.onchange=()=>{$('ret').disabled=r.value==='ow'&&r.checked||document.querySelector('[name=trip]:checked').value==='ow'});
+$('bars').addEventListener('click',e=>{
+ const b=e.target.closest('.bar');if(!b||b.disabled)return;
+ const g=gap()||7,d=parse(b.dataset.d);S.dep=d;if(S.rt)S.ret=addDays(d,g);S.sel=true;
+ syncDates();makeOffers();renderAll();
+});
+$('prev').onclick=()=>{S.month=new Date(S.month.getFullYear(),S.month.getMonth()-1,1);renderCal()};
+$('next').onclick=()=>{S.month=new Date(S.month.getFullYear(),S.month.getMonth()+1,1);renderCal()};
+$('direct').onchange=e=>{S.direct=e.target.checked;renderList()};
+$('max').oninput=e=>{S.max=+e.target.value;renderList()};
+$('sort').onchange=e=>{S.sort=e.target.value;renderList()};
+let tt;$('list').addEventListener('click',e=>{if(!e.target.closest('[data-buy]'))return;
+ const el=$('toast');el.textContent=L().toast;el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,3200)});
+document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{
+ lang=b.dataset.lang;try{localStorage.setItem('lang',lang)}catch(e){}
+ setStatic();renderAll();
+});
+
+function renderPax(){
+ const t=L();$('paxBtn').textContent=t.paxN(S.adt,S.chd,S.inf);
+ const rows=[['adt',t.adt,t.adtS],['chd',t.chd,t.chdS],['inf',t.inf,t.infS]];
+ const tot=S.adt+S.chd+S.inf;
+ $('paxPop').innerHTML=rows.map(([k,n,sub])=>{
+  const minV=k==='adt'?1:0;
+  const canPlus=tot<6&&(k!=='inf'||S.inf<S.adt);
+  return `<div class="prow"><div><b>${n}</b><span>${sub}</span></div><div class="step"><button type="button" data-k="${k}" data-s="-1" aria-label="−" ${S[k]<=minV?'disabled':''}>−</button><output>${S[k]}</output><button type="button" data-k="${k}" data-s="1" aria-label="+" ${canPlus?'':'disabled'}>+</button></div></div>`}).join('')+`<p class="pnote">${t.pnote}</p>`;
+}
+$('paxBtn').onclick=()=>{const o=$('paxPop').hidden;$('paxPop').hidden=!o;$('paxBtn').setAttribute('aria-expanded',o)};
+$('paxPop').addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(!b)return;
+ const k=b.dataset.k;S[k]+=+b.dataset.s;
+ if(S.inf>S.adt)S.inf=S.adt;
+ applyPax();renderPax();makeOffers();renderAll();
+ const nb=$('paxPop').querySelector(`[data-k="${k}"][data-s="${b.dataset.s}"]`);if(nb&&!nb.disabled)nb.focus()});
+document.addEventListener('mousedown',e=>{if(!e.target.closest('.paxf')){$('paxPop').hidden=true;$('paxBtn').setAttribute('aria-expanded','false')}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('paxPop').hidden=true}});
+
+// city dropdown: full list on focus, filtered while typing
+function combo(id){
+ const inp=$(id),lb=$('lb-'+id);let idx=-1,shown=[];
+ const label=c=>cn(c)+' ('+c+')';
+ const open=filter=>{
+  const q=(filter||'').trim().toLowerCase();
+  shown=Object.keys(C).filter(c=>!q||C[c][0].toLowerCase().includes(q)||C[c][1].toLowerCase().includes(q)||c.toLowerCase().includes(q));
+  shown.sort((x,y)=>cn(x).localeCompare(cn(y),loc()));
+  idx=-1;
+  lb.innerHTML=shown.length?shown.map(c=>`<li role="option" data-c="${c}"><b style="font-weight:400">${cn(c)}</b><span>${c}</span></li>`).join(''):`<li class="none">${L().none}</li>`;
+  lb.hidden=false;inp.setAttribute('aria-expanded','true');
+ };
+ const close=()=>{lb.hidden=true;inp.setAttribute('aria-expanded','false')};
+ const pick=c=>{inp.value=label(c);close()};
+ const mark=()=>{[...lb.children].forEach((li,i)=>li.setAttribute('aria-selected',i===idx));const el=lb.children[idx];if(el)el.scrollIntoView({block:'nearest'})};
+ inp.addEventListener('focus',()=>{inp.select();open('')});
+ inp.addEventListener('click',()=>{if(lb.hidden){inp.select();open('')}});
+ inp.addEventListener('input',()=>open(inp.value));
+ inp.addEventListener('blur',()=>setTimeout(close,120));
+ inp.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){e.preventDefault();if(lb.hidden)open(inp.value);idx=Math.min(idx+1,shown.length-1);mark()}
+  else if(e.key==='ArrowUp'){e.preventDefault();idx=Math.max(idx-1,0);mark()}
+  else if(e.key==='Enter'&&!lb.hidden&&idx>=0){e.preventDefault();pick(shown[idx])}
+  else if(e.key==='Escape')close();
+ });
+ lb.addEventListener('mousedown',e=>{e.preventDefault();const li=e.target.closest('[data-c]');if(li)pick(li.dataset.c)});
+}
+combo('from');combo('to');
+
+applyPax();setStatic();syncDates();makeOffers();renderAll();
+</script>
+</body>
+</html>
